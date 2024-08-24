@@ -39,23 +39,23 @@
 
         // Text settings
         let words = ["NEWEST", "BIGGER", "TEXT", "PACK"];
-        const maxFontSize = 80; // Maximum font size
+        const maxFontSize = 70; // Maximum font size
         const minFontSize = 0; // Initial font size
-        const layerDepth = 20; // Number of layers for the 3D effect
+        const layerDepth = 0; // Number of layers for the 3D effect
         const perspectiveScale = 0.03; // Scale factor for perspective
         const lineHeight = 80; // No line height for close stacking
         const duration = 15; // Duration of the animation in frames
         const delay = 0; // Delay between each word's animation in frames (0.2s)
         const resizeDuration = 10; // Duration of the resizing animation in frames
-        const delayBetweenResizes = 0; // 1-second delay between resizing words
-        const moveDownDistance = 20; // Distance to move down after resizing
+        const delayBetweenResizes = 1000; // 1-second delay between resizing words (in milliseconds)
+        const moveDownDistance = 125; // Distance to move down after resizing
         const moveDownDuration = 10; // Duration of the move-down animation in frames
 
         let frame = 0; // Frame counter
         let animationComplete = false; // Flag to indicate if animation is complete
 
         // Rotate the canvas once at the beginning
-        ctx.translate(canvas.width / 2.2, 300);
+        ctx.translate((canvas.width / 2) - lineHeight, (canvas.height / 2) - lineHeight);
         ctx.rotate(310 * Math.PI / 180);
         ctx.translate(-canvas.width / 2, -canvas.height / 2);
 
@@ -136,55 +136,36 @@
                     return;
                 }
 
-                const word = words[currentIndex];
                 let resizeFrame = 0;
                 let moveDownFrame = 0;
                 let initialOffsetY = 0;
 
-                function animateResize() {
+                function animateResizeAndMoveDown() {
                     ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+
                     words.forEach((word, i) => {
                         if (i < currentIndex) {
                             draw3DText(word, canvas.width / 2, canvas.height / 2, layerDepth, i, maxFontSize);
                         } else if (i === currentIndex) {
-                            // Animate the font size from maxFontSize to 0
+                            // Animate the font size from maxFontSize to 0 and move down simultaneously
                             const fontSize = maxFontSize - (resizeFrame / resizeDuration) * maxFontSize;
-                            draw3DText(word, canvas.width / 2, canvas.height / 2, layerDepth, i, fontSize, initialOffsetY);
+                            const moveDownOffset = (moveDownFrame / moveDownDuration) * moveDownDistance;
+                            draw3DText(word, canvas.width / 2, canvas.height / 2, layerDepth, i, fontSize, moveDownOffset);
                         }
                     });
 
                     resizeFrame++;
-                    if (resizeFrame <= resizeDuration) {
-                        requestAnimationFrame(animateResize);
+                    moveDownFrame++;
+                    if (resizeFrame <= resizeDuration || moveDownFrame <= moveDownDuration) {
+                        requestAnimationFrame(animateResizeAndMoveDown);
                     } else {
-                        // Animate moving down after resizing is complete
-                        function animateMoveDown() {
-                            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
-                            words.forEach((word, i) => {
-                                if (i < currentIndex) {
-                                    draw3DText(word, canvas.width / 2, canvas.height / 2, layerDepth, i, maxFontSize);
-                                } else if (i === currentIndex) {
-                                    // Move down animation
-                                    const moveDownOffset = (moveDownFrame / moveDownDuration) * moveDownDistance;
-                                    draw3DText(word, canvas.width / 2, canvas.height / 2, layerDepth, i, 0, moveDownOffset);
-                                }
-                            });
-
-                            moveDownFrame++;
-                            if (moveDownFrame <= moveDownDuration) {
-                                requestAnimationFrame(animateMoveDown);
-                            } else {
-                                // Move to the next word after the current one has moved down
-                                currentIndex--;
-                                setTimeout(resizeNextWord, delayBetweenResizes);
-                            }
-                        }
-
-                        animateMoveDown();
+                        // Move to the next word after the current one has moved down
+                        currentIndex--;
+                        setTimeout(resizeNextWord, delayBetweenResizes);
                     }
                 }
 
-                animateResize();
+                animateResizeAndMoveDown();
             }
 
             resizeNextWord();
